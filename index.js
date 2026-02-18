@@ -65,7 +65,18 @@ Respond ONLY with valid JSON.`
       }]
     });
     
-    const analysis = JSON.parse(message.content[0].text);
+    // Extract and clean the response
+    let responseText = message.content[0].text;
+    
+    // Remove markdown code blocks if present
+    responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    
+    // Trim whitespace
+    responseText = responseText.trim();
+    
+    // Parse JSON
+    const analysis = JSON.parse(responseText);
+    
     res.json({ success: true, analysis });
     
   } catch (error) {
