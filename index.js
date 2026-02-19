@@ -36,6 +36,7 @@ app.post('/', async (req, res) => {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
+      temperature: 0.3,
       messages: [{
         role: 'user',
         content: `You are a medical triage assistant. Analyze this patient email and provide a structured summary.
