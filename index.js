@@ -90,3 +90,72 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
+
+
+// Response generation endpoint
+app.post('/generate-response', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send('');
+  }
+  
+  try {
+    const { subject, from, body, analysis } = req.body;
+    
+    if (!subject || !from || !body) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+    
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 800,
+      temperature: 0.3,
+      messages: [{
+        role: 'user',
+        content: `You are a helpful medical office assistant. Draft a professional, empathetic email response to this patient.
+
+Patient Email:
+From: ${from}
+Subject: ${subject}
+Body: ${body}
+
+AI Analysis (for context):
+${analysis ? 'Summary: ' + analysis.summary : ''}
+${analysis ? 'Patient Intent: ' + analysis.patientIntent : ''}
+${analysis ? 'Urgency: ' + analysis.urgencyLevel : ''}
+
+Guidelines:
+- Be warm, professional, and empathetic
+- Acknowledge their concerns
+- Provide appropriate next steps based on the situation
+- Do NOT provide medical advice or diagnosis
+- Keep it concise (2-4 paragraphs)
+- Use a professional closing
+
+Write the email response (body only, no subject line):`
+      }]
+    });
+    
+    let responseText = message.content[0].text;
+    responseText = responseText.replace(/```\n?/g, '').trim();
+    
+    res.json({
+      success: true,
+      response: responseText
+    });
+    
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
